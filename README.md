@@ -87,6 +87,11 @@ wa --last-seen alex
 wa --last-seen --top 10
 ```
 
+Each line reads `- Alex · presence: last seen 12m ago (2024-04-15 08:30) · last
+message in mirror (2024-04-15 08:10, me): see you`. The presence part is what the
+server just said; the last message is only what the mirror holds, and its time
+says nothing about when the person was online.
+
 Presence is pushed by WhatsApp, never stored, so there is no history: only what
 the server says right now. Asking marks **you** online for the few seconds the
 command runs. A hidden "last seen" and no answer at all look alike from here.

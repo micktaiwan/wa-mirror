@@ -120,7 +120,11 @@ to (`SendPresence(available)` then `SubscribePresence(jid)`, answered by
 - asking marks the account online for the length of the command, set back to
   `unavailable` before hanging up;
 - a hidden last seen comes back as `last="deny"`, which whatsmeow turns into a
-  zero time: indistinguishable from silence, and the output says so.
+  zero time and the output prints as `last seen hidden`; no event at all prints
+  `no answer from the server`;
+- the output labels both halves of a line (`presence: …` and `last message in
+  mirror (time, who): …`) with clock times, because a bare `[1h23m ago]` next to
+  the last message was once read as the age of that message.
 
 Both addresses of a person are subscribed, since there is no telling which one
 the server answers on. `--top` folds the two conversations of one person only

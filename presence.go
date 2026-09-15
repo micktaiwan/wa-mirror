@@ -246,15 +246,18 @@ func lastSeen(ctx context.Context, args []string) error {
 }
 
 // line renders one person the way the list is read aloud: who, when they were
-// last online, and what the last thing said in that conversation was.
+// last online, and what the last thing said in that conversation was. Both parts
+// carry their own label and clock time: a bare "[1h23m ago]" next to the last
+// message reads as the age of that message, not as the person's presence.
 func (t presenceTarget) line() string {
-	out := fmt.Sprintf("- %s [%s]", t.label, presencePhrase(t.got))
+	out := fmt.Sprintf("- %s · presence: %s", t.label, presencePhrase(t.got))
 	if t.body != "" {
-		who := ""
+		who := "them"
 		if t.fromMe {
-			who = "me: "
+			who = "me"
 		}
-		out += fmt.Sprintf(" %s%s", who, truncate(oneLine(t.body), 70))
+		out += fmt.Sprintf(" · last message in mirror (%s, %s): %s",
+			stamp(t.ts), who, truncate(oneLine(t.body), 70))
 	}
 	return out
 }
@@ -262,13 +265,14 @@ func (t presenceTarget) line() string {
 func presencePhrase(p *events.Presence) string {
 	switch {
 	case p == nil:
-		return "no answer"
+		return "no answer from the server"
 	case !p.Unavailable:
 		return "online now"
 	case p.LastSeen.IsZero():
 		return "last seen hidden"
 	default:
-		return humanAgo(time.Since(p.LastSeen)) + " ago"
+		return fmt.Sprintf("last seen %s ago (%s)",
+			humanAgo(time.Since(p.LastSeen)), stamp(p.LastSeen.Unix()))
 	}
 }
 
