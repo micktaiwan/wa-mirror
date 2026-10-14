@@ -42,7 +42,17 @@ const selectMessages = `
 SELECT m.id, m.chat_jid, m.sender_jid, m.from_me, m.is_group, m.ts, m.kind, m.body,
        m.edited_at, m.deleted_at, m.media_path, m.delivered_at, m.read_at,
        COALESCE(NULLIF(c.name, ''), NULLIF(ct.name, ''), '') AS chat_name,
-       COALESCE(NULLIF(cs.name, ''), NULLIF(m.sender_name, ''), '') AS sender_name
+       COALESCE(NULLIF(cs.name, ''), NULLIF(m.sender_name, ''), '') AS sender_name,
+       -- One person can hold two conversations (phone number and @lid alias), and
+       -- history sync files the same message under both. Rank the copies so the
+       -- reader keeps one: the one that knows most (edit, media, receipts, a name).
+       ROW_NUMBER() OVER (
+         PARTITION BY m.id, m.from_me, m.ts
+         ORDER BY m.deleted_at DESC, m.edited_at DESC, m.media_path <> '' DESC,
+                  m.read_at DESC, m.delivered_at DESC,
+                  COALESCE(NULLIF(c.name, ''), NULLIF(ct.name, ''), '') <> '' DESC,
+                  m.chat_jid LIKE '%@s.whatsapp.net' DESC, m.chat_jid
+       ) AS copy_rank
 FROM messages m
 LEFT JOIN chats    c  ON c.jid  = m.chat_jid
 LEFT JOIN contacts ct ON ct.jid = m.chat_jid
@@ -82,11 +92,15 @@ func query(ctx context.Context, db *sql.DB, f filter) ([]row, error) {
 		args = append(args, f.chat)
 	}
 
-	sqlText := selectMessages
+	inner := selectMessages
 	if len(where) > 0 {
-		sqlText += "WHERE " + strings.Join(where, " AND ") + "\n"
+		inner += "WHERE " + strings.Join(where, " AND ") + "\n"
 	}
-	sqlText += "ORDER BY m.ts DESC LIMIT ?"
+	// Dedupe before LIMIT, so --limit counts messages, not copies.
+	sqlText := `SELECT id, chat_jid, sender_jid, from_me, is_group, ts, kind, body,
+       edited_at, deleted_at, media_path, delivered_at, read_at, chat_name, sender_name
+FROM (` + inner + `) WHERE copy_rank = 1
+ORDER BY ts DESC LIMIT ?`
 	args = append(args, f.limit)
 
 	rows, err := db.QueryContext(ctx, sqlText, args...)

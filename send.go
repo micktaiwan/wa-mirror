@@ -235,7 +235,7 @@ func resolveRecipient(ctx context.Context, db *sql.DB, who string) (types.JID, s
 	// id reads like a very long phone number, and addressing it as one reaches
 	// nobody: the server answers "no LID found" for an id that is right there in
 	// the database, one column away.
-	if digits := strings.Map(keepDigits, who); digits == who && len(digits) >= 8 {
+	if digits, ok := phoneDigits(who); ok {
 		if jid, name, ok := knownJIDFor(ctx, db, digits); ok {
 			return jid, name, nil
 		}
@@ -332,6 +332,20 @@ func nameFor(ctx context.Context, db *sql.DB, jid string) string {
 		return shortJID(jid)
 	}
 	return name
+}
+
+// phoneDigits reads what was typed as a phone number when it is written the way
+// people write one — "+33 6 12 34 56 78", "33-612-345-678" — and returns its
+// digits. A leading "+" used to fall through to the name search and come back as
+// "nobody here matches", which reads as a wrong number rather than a format issue.
+func phoneDigits(who string) (string, bool) {
+	for _, r := range who {
+		if !(r >= '0' && r <= '9') && !strings.ContainsRune("+ .-()", r) {
+			return "", false
+		}
+	}
+	digits := strings.Map(keepDigits, who)
+	return digits, len(digits) >= 8
 }
 
 func keepDigits(r rune) rune {

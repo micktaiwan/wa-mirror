@@ -35,6 +35,7 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                            --to <who>       name, phone number or JID of the correspondent
                            --text <msg>     what to write (also the picture's caption)
                            --image <path>   a picture to send, JPEG or PNG
+                         A phone number may carry "+", spaces, dots or dashes: "+33 6 12 34 56 78".
                          An id already seen here reaches its conversation on its own, group
                          or person alike. A group never written to yet needs its full JID,
                          "@g.us" included, or its digits are taken for a phone number.

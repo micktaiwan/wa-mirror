@@ -67,6 +67,9 @@ The daemon log is `~/.wa/wa.log`.
   (`resolveRecipient`). A bare id is looked up in `chats` first
   (`knownJIDFor`), so a group id is not mistaken for a phone number; a phone
   number keeps its `@s.whatsapp.net` address even when a newer `@lid` alias exists.
+  History sync can file the same message under both addresses (same id, two
+  `chat_jid`): `query` (`read.go`) keeps one copy per message with
+  `ROW_NUMBER()` before `LIMIT`, so a reader never sees doubles.
 - **`--recent` does not work on `@lid` conversations.** The phone answers zero
   messages, even when the request is readdressed to the phone-number JID via
   `Store.LIDs.GetPNForLID` (kept in `pullRecent` because it costs nothing).

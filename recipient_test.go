@@ -50,6 +50,22 @@ func TestResolveRecipientPrefersPhoneServer(t *testing.T) {
 	}
 }
 
+// A number written the usual way, with "+" and spaces, is still a phone number,
+// not a name to search for.
+func TestResolveRecipientAcceptsFormattedNumber(t *testing.T) {
+	db := testDB(t)
+
+	for _, typed := range []string{"+33612345678", "+33 6 12 34 56 78", "33-612-345-678"} {
+		jid, _, err := resolveRecipient(context.Background(), db, typed)
+		if err != nil {
+			t.Fatalf("%q: %v", typed, err)
+		}
+		if got := jid.String(); got != "33612345678@s.whatsapp.net" {
+			t.Errorf("%q: got %q, want the phone-number address", typed, got)
+		}
+	}
+}
+
 // An id the mirror has never seen stays a phone number, which is what someone
 // writing to a new contact means.
 func TestResolveRecipientUnknownIDStaysAPhoneNumber(t *testing.T) {
