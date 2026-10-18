@@ -171,6 +171,7 @@ func (m *mirror) handle(rawEvt any) {
 		go m.refreshNames(ctx)
 	case *events.Message:
 		m.storeMessage(ctx, evt)
+		m.notify(ctx, evt)
 	case *events.HistorySync:
 		m.storeHistory(ctx, evt)
 	case *events.Receipt:

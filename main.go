@@ -59,6 +59,11 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                          this marks you online for the few seconds it runs, and there is no
                          history to read: only what the server volunteers right now.
 
+  wa --notify on|off     a desktop alert for each new message, naming the sender and the
+                         group but never the text; muted chats, reactions and your own
+                         messages stay silent. No argument shows the setting, test shows
+                         a sample alert. Takes effect at once, no restart.
+
   wa serve               stay connected and keep mirroring (this is the daemon)
   wa --pair              link this machine to the phone by QR code
   wa --status            whether it is linked, and how fresh the mirror is
@@ -106,6 +111,8 @@ func run(args []string) error {
 			return backfill(ctx, args[1:])
 		case "--last-seen", "--lastseen":
 			return lastSeen(ctx, args[1:])
+		case "--notify":
+			return notifySetting(ctx, args[1:])
 		case "--status", "status":
 			return status(ctx)
 		case "--logout", "logout":
