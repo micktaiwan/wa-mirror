@@ -117,9 +117,26 @@ func send(ctx context.Context, args []string) error {
 		return err
 	}
 
+	internals := m.cli.DangerousInternals()
+	tokenJID := internals.ResolveTCTokenStorageLID(ctx, target)
+	tokenBefore := internals.GetTCTokenSenderTS(tokenJID)
+
 	resp, err := m.cli.SendMessage(ctx, target, msg)
 	if err != nil {
 		return fmt.Errorf("send: %w", err)
+	}
+
+	// After a send, whatsmeow issues the contact a privacy token in a goroutine,
+	// once per seven-day bucket. Hanging up straight away killed that query
+	// ("Failed to issue privacy token ... websocket disconnected"), so the token
+	// was never stored and every later send tried again. Give it a few seconds.
+	if target.Server != types.GroupServer && privacyTokenDue(tokenBefore) {
+		for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); {
+			if !internals.GetTCTokenSenderTS(tokenJID).Equal(tokenBefore) {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 
 	// The mirror is down while we hold the connection, so the message we just
@@ -443,4 +460,11 @@ func thumbnail(jpegBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 	return out.Bytes(), nil
+}
+
+// privacyTokenDue mirrors whatsmeow's shouldSendNewTCToken: a token is issued
+// when none was, or when the seven-day bucket has turned since the last one.
+func privacyTokenDue(last time.Time) bool {
+	const bucket = 604800
+	return last.IsZero() || time.Now().Unix()/bucket > last.Unix()/bucket
 }
