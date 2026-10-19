@@ -54,13 +54,31 @@ side says so. No mark does not mean unread: receipts are only pushed live, so a
 message sent while the mirror was down never gets one, and people can turn read
 receipts off.
 
+## Alerts
+
+```
+wa --notify on                      a desktop alert per new message: who, never what
+wa --notify-read alex               one alert when Alex reads the last message you sent
+wa --notify-read                    the watches armed
+wa --notify-read --cancel alex      drop them (or --cancel all)
+```
+
+Both are raised by the daemon, so `wa serve` has to be running. A read alert
+depends on the read receipt: nothing comes if the other side turned receipts
+off, or if the mirror was down when they read.
+
 ## Send
 
 ```
 wa --send alex "see you at 8"
 wa --send alex --image photo.jpg --text "look"
 wa --send 120363000000000001@g.us "hello group"
+wa --send alex --file report.html --text "here it is"
 ```
+
+`--file` sends any file as a WhatsApp document (name kept, text as caption).
+The mimetype goes out bare (`text/html`, not `text/html; charset=utf-8`):
+with the parameter, Android offered no browser to open an `.html` file.
 
 A name that matches several people is refused rather than guessed. A group you
 have never written to needs its full JID, `@g.us` included.

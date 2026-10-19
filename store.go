@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS meta (
 `
 
 func migrate(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, schema); err != nil {
+	if _, err := db.ExecContext(ctx, schema+readWatchSchema); err != nil {
 		return err
 	}
 	// Columns added after the first databases were created. SQLite has no

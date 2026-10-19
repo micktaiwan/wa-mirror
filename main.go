@@ -31,10 +31,11 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                          the mirror was down never gets one, and a correspondent who turned read
                          receipts off never sends the read one.
 
-  wa --send <who> [msg]  send a message, and/or a picture with --image <path>
+  wa --send <who> [msg]  send a message, a picture (--image) or a file (--file)
                            --to <who>       name, phone number or JID of the correspondent
                            --text <msg>     what to write (also the picture's caption)
                            --image <path>   a picture to send, JPEG or PNG
+                           --file <path>    any file, sent as a document (pdf, html...); the text is its caption
                          A phone number may carry "+", spaces, dots or dashes: "+33 6 12 34 56 78".
                          An id already seen here reaches its conversation on its own, group
                          or person alike. A group never written to yet needs its full JID,
@@ -63,6 +64,11 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                          group but never the text; muted chats, reactions and your own
                          messages stay silent. No argument shows the setting, test shows
                          a sample alert. Takes effect at once, no restart.
+
+  wa --notify-read <who> a desktop alert when this person reads the last message you sent
+                         them (works with --notify off). No argument lists the watches armed,
+                         --cancel <who|all> drops them. Fired by the daemon, so wa serve
+                         must be running; one alert, then the watch is gone.
 
   wa serve               stay connected and keep mirroring (this is the daemon)
   wa --pair              link this machine to the phone by QR code
@@ -113,6 +119,8 @@ func run(args []string) error {
 			return lastSeen(ctx, args[1:])
 		case "--notify":
 			return notifySetting(ctx, args[1:])
+		case "--notify-read":
+			return notifyRead(ctx, args[1:])
 		case "--status", "status":
 			return status(ctx)
 		case "--logout", "logout":

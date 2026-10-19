@@ -35,6 +35,8 @@ go test ./...
 | `media.go` | Attachment downloads into `~/.wa/media`, on a background worker |
 | `presence.go` | `--last-seen`: subscribes to someone's presence for the length of one question |
 | `daemon.go` | launchd agent `local.wa-mirror` (macOS only) |
+| `notify.go` | `--notify`: a desktop alert per new message, sender only, never the text |
+| `readwatch.go` | `--notify-read`: one desktop alert when someone reads the last message sent to them |
 
 Everything lives in **`~/.wa/wa.db`**: the `whatsmeow_*` tables (session,
 encryption keys) and the mirror tables (`messages`, `chats`, `contacts`, `meta`).
@@ -111,6 +113,14 @@ dropped (the account owner reading on another device), and `sender`, `retry`,
 
 Receipts exist only in `events.Receipt`, pushed live and never replayed:
 `--backfill` brings messages back, never their receipts. No mark is not "unread".
+
+`--notify-read` is armed by the CLI and fired by the daemon: the CLI writes the
+id of the last message sent into `read_watches`, and `storeReceipt` calls
+`fireReadWatch` on each read receipt. The match is on the id alone, because the
+receipt can come back on the other address of the same person (`@lid` or
+number). One alert, then the row is deleted. The daemon has to be running a
+binary that knows the table: after a rebuild, `launchctl kickstart -k
+gui/$(id -u)/local.wa-mirror`.
 
 ## Presence
 

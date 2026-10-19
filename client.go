@@ -203,6 +203,9 @@ func (m *mirror) storeReceipt(ctx context.Context, evt *events.Receipt) {
 			err = markDelivered(ctx, m.db, chatJID, id, at)
 		case types.ReceiptTypeRead, types.ReceiptTypePlayed:
 			err = markRead(ctx, m.db, chatJID, id, at)
+			if err == nil {
+				m.fireReadWatch(ctx, id, at)
+			}
 		default:
 			// sender, retry, server-error, inactive: about routing, not about
 			// whether a human saw the message.

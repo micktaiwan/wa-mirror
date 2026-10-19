@@ -8,7 +8,9 @@ import (
 	"image"
 	"image/jpeg"
 	_ "image/png"
+	"mime"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,7 +25,7 @@ import (
 // hold one connection at a time, so it stands the background mirror down for the
 // duration exactly the way pairing does, and puts it back up afterwards.
 func send(ctx context.Context, args []string) error {
-	var to, text, imagePath string
+	var to, text, imagePath, filePath string
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -42,6 +44,8 @@ func send(ctx context.Context, args []string) error {
 			text, err = value()
 		case "--image", "--photo":
 			imagePath, err = value()
+		case "--file", "--document":
+			filePath, err = value()
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown option %s — see `wa --help`", arg)
@@ -64,8 +68,19 @@ func send(ctx context.Context, args []string) error {
 	if to == "" {
 		return fmt.Errorf("who to? give a name, a phone number or a JID")
 	}
-	if text == "" && imagePath == "" {
-		return fmt.Errorf("nothing to send — pass a message, --image, or both")
+	if text == "" && imagePath == "" && filePath == "" {
+		return fmt.Errorf("nothing to send — pass a message, --image or --file")
+	}
+	if imagePath != "" && filePath != "" {
+		return fmt.Errorf("--image and --file go in separate messages — send them one at a time")
+	}
+
+	var doc []byte
+	if filePath != "" {
+		var err error
+		if doc, err = os.ReadFile(filePath); err != nil {
+			return fmt.Errorf("read %s: %w", filePath, err)
+		}
 	}
 
 	var picture []byte
@@ -112,7 +127,13 @@ func send(ctx context.Context, args []string) error {
 		return fmt.Errorf("could not reach WhatsApp within 30s")
 	}
 
-	msg, kind, body, err := buildMessage(ctx, m.cli, picture, width, height, text)
+	var msg *waE2E.Message
+	var kind, body string
+	if doc != nil {
+		msg, kind, body, err = buildDocument(ctx, m.cli, doc, filepath.Base(filePath), text)
+	} else {
+		msg, kind, body, err = buildMessage(ctx, m.cli, picture, width, height, text)
+	}
 	if err != nil {
 		return err
 	}
@@ -160,6 +181,9 @@ func send(ctx context.Context, args []string) error {
 	what := "message"
 	if picture != nil {
 		what = "picture"
+	}
+	if doc != nil {
+		what = "file " + filepath.Base(filePath)
 	}
 	fmt.Printf("Sent the %s to %s at %s\n", what, label, resp.Timestamp.Local().Format("15:04"))
 	return nil
@@ -401,6 +425,37 @@ func buildMessage(ctx context.Context, cli *whatsmeow.Client, picture []byte, wi
 		img.JPEGThumbnail = thumb
 	}
 	return &waE2E.Message{ImageMessage: img}, "image", text, nil
+}
+
+// buildDocument uploads any file as a WhatsApp document: it arrives as an
+// attachment with its name, which the recipient opens with the phone's own
+// viewer (an .html page opens in the browser). The text rides as its caption.
+func buildDocument(ctx context.Context, cli *whatsmeow.Client, data []byte, name, text string) (*waE2E.Message, string, string, error) {
+	up, err := cli.Upload(ctx, data, whatsmeow.MediaDocument)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("upload the file: %w", err)
+	}
+	// Bare type only: Go answers "text/html; charset=utf-8", and a phone
+	// matches its viewers on the bare type.
+	mimetype := "application/octet-stream"
+	if mt, _, err := mime.ParseMediaType(mime.TypeByExtension(filepath.Ext(name))); err == nil {
+		mimetype = mt
+	}
+	doc := &waE2E.DocumentMessage{
+		URL:           proto.String(up.URL),
+		DirectPath:    proto.String(up.DirectPath),
+		MediaKey:      up.MediaKey,
+		Mimetype:      proto.String(mimetype),
+		FileEncSHA256: up.FileEncSHA256,
+		FileSHA256:    up.FileSHA256,
+		FileLength:    proto.Uint64(up.FileLength),
+		FileName:      proto.String(name),
+		Title:         proto.String(name),
+	}
+	if text != "" {
+		doc.Caption = proto.String(text)
+	}
+	return &waE2E.Message{DocumentMessage: doc}, "document", text, nil
 }
 
 // readAsJPEG loads a picture from disk as the JPEG bytes WhatsApp expects,
