@@ -20,7 +20,7 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                            --since <date>   from this date on
                            --until <date>   up to this date, its whole span included
                            --from <text>    only this correspondent or group
-                           --search <text>  only messages containing this
+                           --search <text>  only messages containing this; repeat it for any of several words
                            --limit <n>      how many to show (default 20)
                            --threads        one line per conversation instead of the messages
                            --json           machine-readable output
@@ -290,7 +290,7 @@ func read(ctx context.Context, args []string) error {
 			if err != nil {
 				return err
 			}
-			f.search = v
+			f.search = append(f.search, v)
 		case "--chat":
 			v, err := value()
 			if err != nil {

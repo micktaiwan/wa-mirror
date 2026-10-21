@@ -15,7 +15,7 @@ type filter struct {
 	since  *time.Time
 	until  *time.Time
 	from   string
-	search string
+	search []string
 	limit  int
 	chat   string
 }
@@ -71,9 +71,14 @@ func query(ctx context.Context, db *sql.DB, f filter) ([]row, error) {
 		where = append(where, "m.ts <= ?")
 		args = append(args, f.until.Unix())
 	}
-	if f.search != "" {
-		where = append(where, "m.body LIKE ?")
-		args = append(args, "%"+f.search+"%")
+	// Repeated --search terms are alternatives: a message matches if it holds any of them.
+	if len(f.search) > 0 {
+		ors := make([]string, len(f.search))
+		for i, s := range f.search {
+			ors[i] = "m.body LIKE ?"
+			args = append(args, "%"+s+"%")
+		}
+		where = append(where, "("+strings.Join(ors, " OR ")+")")
 	}
 	// --from matches a correspondent by any name we know for them, or by number.
 	if f.from != "" {
