@@ -74,7 +74,12 @@ wa --send alex "see you at 8"
 wa --send alex --image photo.jpg --text "look"
 wa --send 120363000000000001@g.us "hello group"
 wa --send alex --file report.html --text "here it is"
+wa --send alex --video clip.mp4 --text "watch this"
 ```
+
+`--video` sends an `.mp4` (H.264) as a WhatsApp video that plays in the chat,
+with its length, size and preview read by `ffprobe` and `ffmpeg` when they are
+installed. The same file sent with `--file` arrives as a document to open.
 
 `--file` sends any file as a WhatsApp document (name kept, text as caption).
 The mimetype goes out bare (`text/html`, not `text/html; charset=utf-8`):

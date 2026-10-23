@@ -25,7 +25,7 @@ import (
 // hold one connection at a time, so it stands the background mirror down for the
 // duration exactly the way pairing does, and puts it back up afterwards.
 func send(ctx context.Context, args []string) error {
-	var to, text, imagePath, filePath string
+	var to, text, imagePath, filePath, videoPath string
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -46,6 +46,8 @@ func send(ctx context.Context, args []string) error {
 			imagePath, err = value()
 		case "--file", "--document":
 			filePath, err = value()
+		case "--video":
+			videoPath, err = value()
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown option %s — see `wa --help`", arg)
@@ -68,11 +70,25 @@ func send(ctx context.Context, args []string) error {
 	if to == "" {
 		return fmt.Errorf("who to? give a name, a phone number or a JID")
 	}
-	if text == "" && imagePath == "" && filePath == "" {
-		return fmt.Errorf("nothing to send — pass a message, --image or --file")
+	if text == "" && imagePath == "" && filePath == "" && videoPath == "" {
+		return fmt.Errorf("nothing to send — pass a message, --image, --video or --file")
 	}
-	if imagePath != "" && filePath != "" {
-		return fmt.Errorf("--image and --file go in separate messages — send them one at a time")
+	attachments := 0
+	for _, p := range []string{imagePath, filePath, videoPath} {
+		if p != "" {
+			attachments++
+		}
+	}
+	if attachments > 1 {
+		return fmt.Errorf("--image, --video and --file go in separate messages — send them one at a time")
+	}
+
+	var clip *videoFile
+	if videoPath != "" {
+		var err error
+		if clip, err = readVideo(videoPath); err != nil {
+			return err
+		}
 	}
 
 	var doc []byte
@@ -131,6 +147,8 @@ func send(ctx context.Context, args []string) error {
 	var kind, body string
 	if doc != nil {
 		msg, kind, body, err = buildDocument(ctx, m.cli, doc, filepath.Base(filePath), text)
+	} else if clip != nil {
+		msg, kind, body, err = buildVideo(ctx, m.cli, clip, text)
 	} else {
 		msg, kind, body, err = buildMessage(ctx, m.cli, picture, width, height, text)
 	}
@@ -184,6 +202,9 @@ func send(ctx context.Context, args []string) error {
 	}
 	if doc != nil {
 		what = "file " + filepath.Base(filePath)
+	}
+	if clip != nil {
+		what = "video " + filepath.Base(videoPath)
 	}
 	fmt.Printf("Sent the %s to %s at %s\n", what, label, resp.Timestamp.Local().Format("15:04"))
 	return nil

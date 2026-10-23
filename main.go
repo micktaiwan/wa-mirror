@@ -31,10 +31,12 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                          the mirror was down never gets one, and a correspondent who turned read
                          receipts off never sends the read one.
 
-  wa --send <who> [msg]  send a message, a picture (--image) or a file (--file)
+  wa --send <who> [msg]  send a message, a picture (--image), a video (--video) or a file (--file)
                            --to <who>       name, phone number or JID of the correspondent
                            --text <msg>     what to write (also the picture's caption)
                            --image <path>   a picture to send, JPEG or PNG
+                           --video <path>   an .mp4 that plays in the chat (sent with --file it
+                                            arrives as a document to open)
                            --file <path>    any file, sent as a document (pdf, html...); the text is its caption
                          A phone number may carry "+", spaces, dots or dashes: "+33 6 12 34 56 78".
                          An id already seen here reaches its conversation on its own, group
