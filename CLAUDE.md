@@ -42,6 +42,14 @@ Everything lives in **`~/.wa/wa.db`**: the `whatsmeow_*` tables (session,
 encryption keys) and the mirror tables (`messages`, `chats`, `contacts`, `meta`).
 The daemon log is `~/.wa/wa.log`.
 
+Reading it: prefer `wa --json`, which resolves names and keeps one copy per message
+and carries `file` (absolute path of the downloaded attachment, absent when none).
+Raw `sqlite3` on `messages` needs the real columns: `id, chat_jid, sender_jid,
+sender_name, from_me, is_group, ts, kind, body, edited_at, deleted_at, media_path,
+delivered_at, read_at` (`media_path` is a bare file name under `~/.wa/media/`;
+there is no `media` column). Run `sqlite3 ~/.wa/wa.db ".schema messages"` rather
+than guessing.
+
 ## What to know before touching the code
 
 - **One connection per companion device.** `--send`, `--backfill` and

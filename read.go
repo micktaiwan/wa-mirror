@@ -160,7 +160,13 @@ func printMessages(rows []row) {
 			// The path is what makes an attachment readable rather than just
 			// announced: it is the file to open, right next to the caption.
 			if r.File != "" {
-				tag += " " + r.File
+				// A row can name a file that is no longer on disk (deleted or
+				// never downloaded): say so instead of handing out a dead path.
+				if _, err := os.Stat(r.File); err != nil {
+					tag += " (file missing: " + r.File + ")"
+				} else {
+					tag += " " + r.File
+				}
 			}
 			if body == "" {
 				body = tag
