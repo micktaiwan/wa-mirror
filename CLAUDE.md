@@ -33,6 +33,7 @@ go test ./...
 | `send.go` | `--send` and recipient resolution |
 | `backfill.go` | Asks the phone for messages older than the oldest held, and with `--recent` for the latest window |
 | `media.go` | Attachment downloads into `~/.wa/media`, on a background worker |
+| `who.go` | `--who`: name, push name or number to the person behind a sender address (resolves `@lid` through `whatsmeow_lid_map`) |
 | `presence.go` | `--last-seen`: subscribes to someone's presence for the length of one question |
 | `daemon.go` | launchd agent `local.wa-mirror` (macOS only) |
 | `notify.go` | `--notify`: a desktop alert per new message, sender only, never the text |
@@ -48,7 +49,8 @@ Raw `sqlite3` on `messages` needs the real columns: `id, chat_jid, sender_jid,
 sender_name, from_me, is_group, ts, kind, body, edited_at, deleted_at, media_path,
 delivered_at, read_at` (`media_path` is a bare file name under `~/.wa/media/`;
 there is no `media` column). Run `sqlite3 ~/.wa/wa.db ".schema messages"` rather
-than guessing.
+than guessing. Who posted a status (`chat_jid = 'status@broadcast'`, sender in
+`sender_jid`/`sender_name`) or who a push name is: `wa --who <text>`, not raw SQL.
 
 ## What to know before touching the code
 
