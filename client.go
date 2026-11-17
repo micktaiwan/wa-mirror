@@ -172,6 +172,7 @@ func (m *mirror) handle(rawEvt any) {
 	case *events.Message:
 		m.storeMessage(ctx, evt)
 		m.notify(ctx, evt)
+		m.onMessage(ctx, evt)
 	case *events.HistorySync:
 		m.storeHistory(ctx, evt)
 	case *events.Receipt:

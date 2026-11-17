@@ -37,6 +37,7 @@ go test ./...
 | `presence.go` | `--last-seen`: subscribes to someone's presence for the length of one question |
 | `daemon.go` | launchd agent `local.wa-mirror` (macOS only) |
 | `notify.go` | `--notify`: a desktop alert per new message, sender only, never the text |
+| `onmessage.go` | `--on-message`: a shell command run per live message, the message as JSON on stdin, killed after 60 s |
 | `readwatch.go` | `--notify-read`: one desktop alert when someone reads the last message sent to them |
 
 Everything lives in **`~/.wa/wa.db`**: the `whatsmeow_*` tables (session,

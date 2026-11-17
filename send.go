@@ -42,6 +42,14 @@ func send(ctx context.Context, args []string) error {
 			to, err = value()
 		case "--text", "--message":
 			text, err = value()
+		case "--text-file":
+			var path string
+			if path, err = value(); err == nil {
+				var raw []byte
+				if raw, err = os.ReadFile(path); err == nil {
+					text = strings.TrimRight(string(raw), "\n")
+				}
+			}
 		case "--image", "--photo":
 			imagePath, err = value()
 		case "--file", "--document":

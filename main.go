@@ -34,6 +34,7 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
   wa --send <who> [msg]  send a message, a picture (--image), a video (--video) or a file (--file)
                            --to <who>       name, phone number or JID of the correspondent
                            --text <msg>     what to write (also the picture's caption)
+                           --text-file <p>  the same, read from a file (trailing newlines dropped)
                            --image <path>   a picture to send, JPEG or PNG
                            --video <path>   an .mp4 that plays in the chat (sent with --file it
                                             arrives as a document to open)
@@ -70,6 +71,11 @@ const usage = `wa — read the WhatsApp messages mirrored on this machine
                          group but never the text; muted chats, reactions and your own
                          messages stay silent. No argument shows the setting, test shows
                          a sample alert. Takes effect at once, no restart.
+
+  wa --on-message <cmd>  run a shell command for each new message received live, with the
+                         message as JSON on stdin (id, chat, sender, sender_phone,
+                         sender_name, is_group, ts, kind, body). Same filter as --notify.
+                         off clears it, no argument shows it. Takes effect at once.
 
   wa --notify-read <who> a desktop alert when this person reads the last message you sent
                          them (works with --notify off). No argument lists the watches armed,
@@ -127,6 +133,8 @@ func run(args []string) error {
 			return who(ctx, args[1:])
 		case "--notify":
 			return notifySetting(ctx, args[1:])
+		case "--on-message":
+			return onMessageSetting(ctx, args[1:])
 		case "--notify-read":
 			return notifyRead(ctx, args[1:])
 		case "--status", "status":

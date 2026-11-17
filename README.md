@@ -58,6 +58,7 @@ receipts off.
 
 ```
 wa --notify on                      a desktop alert per new message: who, never what
+wa --on-message ./react.sh         run a command per new message, the message as JSON on stdin (own messages too, with from_me)
 wa --notify-read alex               one alert when Alex reads the last message you sent
 wa --notify-read                    the watches armed
 wa --notify-read --cancel alex      drop them (or --cancel all)
